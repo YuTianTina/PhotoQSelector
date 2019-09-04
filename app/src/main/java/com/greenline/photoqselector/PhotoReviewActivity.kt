@@ -83,14 +83,10 @@ class PhotoReviewActivity : AppCompatActivity() {
                     Toast.makeText(this@PhotoReviewActivity, e.message, Toast.LENGTH_LONG).show()
                     return@delete false
                 }
-                val bundle = Bundle().apply {
-                    putInt("position", position)
-                    putParcelable("uri", uri)
-                }
                 startIntentSenderForResult(
                     intentSender,
                     REQUEST_DELETE,
-                    Intent().apply { putExtra("extra", bundle) },
+                    null,
                     0,
                     0,
                     0,
