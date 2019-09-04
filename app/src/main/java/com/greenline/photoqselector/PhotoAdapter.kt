@@ -1,7 +1,10 @@
 package com.greenline.photoqselector
 
+import android.app.RecoverableSecurityException
 import android.content.Context
+import android.media.Image
 import android.net.Uri
+import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -14,7 +17,12 @@ import com.bumptech.glide.Glide
  * @since 2019-08-27
  */
 class PhotoAdapter(val context: Context, photoList: MutableList<Uri>): RecyclerView.Adapter<PhotoVH>() {
-    private var mPhotoList = photoList;
+    private var mPhotoList = photoList
+    private var onDelete: ((Uri, Int) -> Boolean)? = null
+    public fun delete(onDelete : (uri: Uri, position: Int) ->Boolean){
+        this.onDelete = onDelete
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoVH {
         val imgView = ImageView(context)
         return PhotoVH(imgView)
@@ -27,6 +35,14 @@ class PhotoAdapter(val context: Context, photoList: MutableList<Uri>): RecyclerV
             .load(mPhotoList[position])
             .thumbnail(0.3f)
             .into(holder.itemView as ImageView)
+        holder.itemView.setOnClickListener {
+            // 删除
+            val index = holder.adapterPosition
+            if(true == onDelete?.invoke(mPhotoList[index], index)){
+                mPhotoList.removeAt(index)
+                notifyItemRemoved(index)
+            }
+        }
     }
 }
 

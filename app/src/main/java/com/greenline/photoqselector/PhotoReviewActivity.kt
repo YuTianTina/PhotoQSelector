@@ -1,12 +1,16 @@
 package com.greenline.photoqselector
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.RecoverableSecurityException
 import android.content.ContentUris
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.BaseColumns
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import com.tbruyelle.rxpermissions2.RxPermissions
@@ -18,6 +22,7 @@ import kotlinx.android.synthetic.main.activity_photo_review.*
  * @since 2019-08-27
  */
 class PhotoReviewActivity : AppCompatActivity() {
+    val REQUEST_DELETE = 101
     @SuppressLint("CheckResult")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,10 +67,46 @@ class PhotoReviewActivity : AppCompatActivity() {
         return ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id).apply { Log.e("media path", toString()) }
     }
 
+    @SuppressLint("NewApi")
     private fun initReclerview(photoList: MutableList<Uri>) {
         val adapter = PhotoAdapter(this, photoList)
         val layoutManager = GridLayoutManager(this, 4)
         rvList.layoutManager = layoutManager
-        rvList.adapter = adapter
+        rvList.adapter = adapter.apply { delete { uri, position->
+            try{
+                contentResolver.delete(uri, null, null)
+                return@delete true
+            }catch (e: SecurityException) {
+                val intentSender =
+                    (e as? RecoverableSecurityException)?.userAction?.actionIntent?.intentSender
+                if(null == intentSender){
+                    Toast.makeText(this@PhotoReviewActivity, e.message, Toast.LENGTH_LONG).show()
+                    return@delete false
+                }
+                val bundle = Bundle().apply {
+                    putInt("position", position)
+                    putParcelable("uri", uri)
+                }
+                startIntentSenderForResult(
+                    intentSender,
+                    REQUEST_DELETE,
+                    Intent().apply { putExtra("extra", bundle) },
+                    0,
+                    0,
+                    0,
+                    null
+                )
+                return@delete  false
+            }
+        } }
     }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if(REQUEST_DELETE == requestCode && Activity.RESULT_OK == resultCode){
+            Toast.makeText(this, "allow", Toast.LENGTH_LONG).show()
+        }
+    }
+
+
 }
