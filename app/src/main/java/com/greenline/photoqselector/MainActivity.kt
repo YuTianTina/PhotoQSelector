@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
@@ -47,6 +48,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun createImgFile(): Uri{
         val timeStap = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+
         val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         val file = File.createTempFile("JPEG_${timeStap}_",
             ".jpg",
@@ -59,8 +61,7 @@ class MainActivity : AppCompatActivity() {
      * @return Boolean
      */
     private fun isQ(): Boolean{
-//        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-        return !Environment.isExternalStorageLegacy()
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !Environment.isExternalStorageLegacy()
     }
 
     /**
@@ -82,7 +83,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
         if(REQUEST_IMAGE_CAPTURE == requestCode){
-            Log.e("internal storage", currentUri?.toString() ?: "")
             if(!isQ()){
                 galleryAddPic()
             }
@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun createImgFileQ(): Uri?{
         val timeStap = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-        val name = "JPEG_${timeStap}_.jpg"
+        val name = "JPEG_${timeStap}"
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, name)
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
@@ -119,6 +119,9 @@ class MainActivity : AppCompatActivity() {
         val resolver = contentResolver
         val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val item = resolver.insert(collection, values)
+
+
+
         return item?.apply {
             currentUri = this
             Log.e("Q-URI", toString())
